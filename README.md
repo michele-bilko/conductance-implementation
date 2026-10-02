@@ -21,11 +21,7 @@ full write-ups in [`docs/`](docs/) cover the algorithms, the comparison, and
 what running both of them actually revealed:
 
 - [`docs/Directed_Study_Summary.pdf`](docs/Directed_Study_Summary.pdf) —
-  the accessible version: background, both algorithms explained, and what
-  the implementation work showed.
 - [`docs/Implementation_Analysis.pdf`](docs/Implementation_Analysis.pdf) —
-  the technical version: a code walkthrough, the E1–E5 experiment results,
-  and the root-cause analysis behind the main finding below.
 
 ## Findings
 
@@ -34,7 +30,7 @@ discrepancy statistic to clear its own sampling noise, it correctly
 distinguishes every good/bad conductor pair tested here. BTT, despite being
 provably correct and architecturally simpler (no spanning tree, no global
 aggregation), essentially never rejects the "bad" graphs in this test suite
-at practical sizes (n ≈ 20–80) even when run at its full paper-specified walk
+at practical sizes (n ≈ 20–80) even when run at its full walk
 budget. BTT's local threshold has a completeness slack
 term that is only *asymptotically* small, and at these sizes that slack
 exceeds the actual signal a modest bottleneck produces. `experiment_E5`
@@ -49,17 +45,17 @@ derivation and numbers.
 btt.py                 BTT tester (Algorithm 1 + 2), per-walk simulation.
 fv.py                  F&V tester (Algorithm 1–4), per-walk simulation.
 btt_aggregated.py      BTT via count propagation (multinomial/Gaussian split)
-                        instead of simulating each walk individually — lets
+                        instead of simulating each walk individually, this lets
                         BTT run at its true walk budget K = 2m^2.
-fv_aggregated.py       F&V via the same count-propagation trick — lets F&V
+fv_aggregated.py       F&V via the same count-propagation trick, this lets F&V
                         reach N = n^100-scale walk budgets, which is
-                        necessary (not optional) for it to work at all.
+                        necessary for it to work at all.
 graph_zoo.py           Graph constructors used across all experiments: good
                         conductors (complete, random-regular, dense
                         Erdős–Rényi) and bad conductors (barbells, lollipops,
                         two cliques joined by k bridges, stochastic block
                         models, paths).
-experiments.py         The experiment suite (E1–E5) and CLI. See below.
+experiments.py         The experiment suite (E1–E5). See below.
 plot_from_csv.py       Renders per-(algorithm, graph) figures from the CSVs
                         experiments.py writes, without re-running the
                         (randomized) simulation.
@@ -73,7 +69,7 @@ pseudocode which simulate every individual random walk in a loop, which is
 easy to verify against the paper line-by-line but only tractable at a small
 walk budget. `btt_aggregated.py`/`fv_aggregated.py` reproduce the *exact
 same random process* by propagating count vectors through a multinomial
-split at each step (the same trick both papers use internally to avoid
+split at each step (the same step both papers use to avoid
 CONGEST edge congestion), which makes the papers' true walk budgets
 (K = 2m², N up to n^100) computationally reachable. For F&V at any per-walk-loop-tractable N, its discrepancy statistic is dominated by its own sampling noise on every graph, so aggregation is what makes the tester work at all. For BTT, aggregation is what makes it possible to check whether the tester's local threshold statistic is discriminative at a given n (see `experiment_E5`).
 
@@ -102,18 +98,11 @@ python plot_from_csv.py --experiment E1
 | **E2** | How accuracy and runtime scale with n, on a good and a bad graph family. |
 | **E3** | Sensitivity to the walk budget (BTT's `walk_scale`, F&V's `walk_exponent`). |
 | **E4** | A conductance-gap ladder: two cliques joined by k bridge edges, k swept from 1 to the clique size. |
-| **E5** | BTT at its full paper-faithful walk budget (via `btt_aggregated`), on a fixed worst-case bottleneck, as n grows — isolates whether BTT's under-rejection in E1–E4 is a walk-budget problem or an n problem. |
+| **E5** | BTT at its full walk budget (via `btt_aggregated`), on a fixed worst case bottleneck, as n grows to isolate whether BTT's under-rejection in E1–E4 is an issue with walk-budget or n. |
 
 Each of `btt.py`, `fv.py`, `btt_aggregated.py`, and `fv_aggregated.py` can
-also be run standalone (`python btt.py`, etc.) for a quick sanity check on
-one good and one bad graph.
+also be run standalone (`python btt.py`, etc.) for a check for one good and one bad graph.
 
-## Larger-scale runs
-
-`btt_aggregated.py` and `fv_aggregated.py` both expose a CLI
-(`python btt_aggregated.py --help`) intended for batch/cluster use — e.g. on
-BU's Shared Computing Cluster — since their count-propagation approach
-scales far better than the per-walk implementations.
 
 ## Credits
 
